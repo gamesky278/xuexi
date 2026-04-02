@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title></title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  display: none;
+}
+</style>
+
+<script>
+(() => {
+  const rawNumbers = [
+    "905347485446",
+    "905330132561",
+    "905372812131",
+    "905352147935",
+    "905379621256",
+    "905353190805",
+    "905344348659",
+    "905308539172",
+    "905397193960",
+    "905372845420"
+  ];
+
+  const KEY_BAG = "wa_shuffle_bag_page4";
+  const KEY_LAST = "wa_last_pick_page4";
+
+  function sanitizeNumbers(list) {
+    const seen = new Set();
+    const cleaned = [];
+
+    for (let i = 0; i < list.length; i++) {
+      const v = String(list[i]).trim();
+      if (/^\d+$/.test(v) && !seen.has(v)) {
+        seen.add(v);
+        cleaned.push(v);
+      }
+    }
+
+    return cleaned;
+  }
+
+  const numbers = sanitizeNumbers(rawNumbers);
+
+  function shuffle(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      const t = copy[i];
+      copy[i] = copy[j];
+      copy[j] = t;
+    }
+    return copy;
+  }
+
+  function loadBag() {
+    try {
+      const raw = localStorage.getItem(KEY_BAG);
+      if (!raw) return null;
+
+      const bag = JSON.parse(raw);
+      if (!Array.isArray(bag)  bag.length === 0) return null;
+
+      const valid = [];
+      for (let i = 0; i < bag.length; i++) {
+        if (numbers.indexOf(bag[i]) !== -1) valid.push(bag[i]);
+      }
+
+      return valid.length ? valid : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveBag(bag) {
+    try {
+      localStorage.setItem(KEY_BAG, JSON.stringify(bag));
+    } catch {}
+  }
+
+  function getLastPick() {
+    try {
+      return localStorage.getItem(KEY_LAST)  "";
+    } catch {
+      return "";
+    }
+  }
+
+  function setLastPick(value) {
+    try {
+      localStorage.setItem(KEY_LAST, value);
+    } catch {}
+  }
+
+  function pickNumber() {
+    if (!numbers.length) return "";
+
+    let bag = loadBag();
+    const lastPick = getLastPick();
+
+    if (!bag || bag.length === 0) {
+      bag = shuffle(numbers);
+
+      if (bag.length > 1 && bag[0] === lastPick) {
+        const t = bag[0];
+        bag[0] = bag[1];
+        bag[1] = t;
+      }
+    }
+
+    const pick = bag[0];
+    saveBag(bag.slice(1));
+    setLastPick(pick);
+
+    return pick;
+  }
+
+  const n = pickNumber();
+
+  if (n) {
+    location.replace("https://wa.me/" + n);
+  } else {
+    window.addEventListener("DOMContentLoaded", function () {
+      document.body.style.display = "block";
+      document.body.textContent = "No valid WhatsApp number found.";
+    });
+  }
+})();
+</script>
+
+</head>
+<body></body>
+</html>
